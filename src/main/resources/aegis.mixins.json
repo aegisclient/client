@@ -1,0 +1,18 @@
+{
+    "required": true,
+    "package": "dev.aegis.client.mixin",
+    "compatibilityLevel": "JAVA_17",
+    "client": [
+        "MixinClientPlayerEntity",
+        "MixinMinecraftClient",
+        "MixinInGameHud",
+        "MixinLivingEntity",
+        "MixinGameRenderer",
+        "MixinClientConnection",
+        "MixinWorldRenderer",
+        "MixinBlock"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

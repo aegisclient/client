@@ -1,0 +1,27 @@
+{
+    "schemaVersion": 1,
+    "id": "aegis",
+    "version": "${version}",
+    "name": "Aegis Client",
+    "description": "Aegis - a utility mod for Minecraft",
+    "authors": [
+        "AegisTeam"
+    ],
+    "contact": {},
+    "license": "MIT",
+    "environment": "client",
+    "entrypoints": {
+        "client": [
+            "dev.aegis.client.Aegis"
+        ]
+    },
+    "mixins": [
+        "aegis.mixins.json"
+    ],
+    "depends": {
+        "fabricloader": ">=0.15.0",
+        "minecraft": "~1.20.4",
+        "java": ">=17",
+        "fabric-api": "*"
+    }
+}
