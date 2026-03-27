@@ -12,6 +12,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -22,6 +23,7 @@ public class KillAura extends Module {
     private boolean targetHostile = true;
     private boolean targetAnimals = false;
     private int attackCooldown = 0;
+    private final Random random = new Random();
 
     public KillAura() {
         super("KillAura", "Automatically attacks nearby entities", Category.COMBAT, GLFW.GLFW_KEY_UNKNOWN);
@@ -47,7 +49,9 @@ public class KillAura extends Module {
 
         mc.interactionManager.attackEntity(mc.player, target);
         mc.player.swingHand(Hand.MAIN_HAND);
-        attackCooldown = 2; // small delay between attacks
+
+        // randomized delay to avoid consistent attack pattern detection
+        attackCooldown = 1 + random.nextInt(3);
     }
 
     private LivingEntity findTarget() {
@@ -80,8 +84,10 @@ public class KillAura extends Module {
         float yaw = (float) Math.toDegrees(Math.atan2(dz, dx)) - 90.0f;
         float pitch = (float) -Math.toDegrees(Math.atan2(dy, dist));
 
-        mc.player.setYaw(smoothRotate(mc.player.getYaw(), yaw, 60));
-        mc.player.setPitch(smoothRotate(mc.player.getPitch(), pitch, 60));
+        // randomize rotation speed to avoid pattern detection
+        float rotSpeed = 35 + random.nextFloat() * 30;
+        mc.player.setYaw(smoothRotate(mc.player.getYaw(), yaw, rotSpeed));
+        mc.player.setPitch(smoothRotate(mc.player.getPitch(), pitch, rotSpeed));
     }
 
     private float smoothRotate(float current, float target, float speed) {

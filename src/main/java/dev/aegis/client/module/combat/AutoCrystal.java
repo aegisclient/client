@@ -17,6 +17,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 
 public class AutoCrystal extends Module {
 
@@ -24,10 +25,11 @@ public class AutoCrystal extends Module {
     private double breakRange = 5.5;
     private double minDamage = 6.0;
     private double maxSelfDamage = 10.0;
-    private int breakDelay = 0;
-    private int placeDelay = 0;
+    private int breakDelay = 1;
+    private int placeDelay = 2;
     private int breakTicks = 0;
     private int placeTicks = 0;
+    private final Random random = new Random();
 
     public AutoCrystal() {
         super("AutoCrystal", "Automatically places and breaks end crystals for PvP", Category.COMBAT, GLFW.GLFW_KEY_UNKNOWN);
@@ -37,18 +39,18 @@ public class AutoCrystal extends Module {
     public void onTick() {
         if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
 
-        // break existing crystals first
+        // break existing crystals first (with randomized timing)
         if (breakTicks <= 0) {
             breakNearestCrystal();
-            breakTicks = breakDelay;
+            breakTicks = breakDelay + random.nextInt(2);
         } else {
             breakTicks--;
         }
 
-        // then place new ones
+        // then place new ones (with randomized timing)
         if (placeTicks <= 0) {
             placeBestCrystal();
-            placeTicks = placeDelay;
+            placeTicks = placeDelay + random.nextInt(3);
         } else {
             placeTicks--;
         }
