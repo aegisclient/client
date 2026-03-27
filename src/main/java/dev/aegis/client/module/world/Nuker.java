@@ -12,7 +12,7 @@ public class Nuker extends Module {
     private int radius = 4;
 
     public Nuker() {
-        super("Nuker", "Destroys blocks around you in a radius", Category.WORLD, GLFW.GLFW_KEY_N);
+        super("Nuker", "Destroys blocks around you in a radius", Category.WORLD, GLFW.GLFW_KEY_UNKNOWN);
     }
 
     @Override

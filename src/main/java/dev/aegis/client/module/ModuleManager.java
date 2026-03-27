@@ -25,6 +25,10 @@ public class ModuleManager {
         register(new AutoTotem());
         register(new AutoArmor());
         register(new BowAimbot());
+        register(new AutoCrystal());
+        register(new Velocity());
+        register(new TriggerBot());
+        register(new Anchor());
 
         // movement
         register(new Flight());
@@ -34,6 +38,10 @@ public class ModuleManager {
         register(new Step());
         register(new Jesus());
         register(new BoatFly());
+        register(new ElytraFly());
+        register(new Phase());
+        register(new LongJump());
+        register(new EntitySpeed());
 
         // render
         register(new ESP());
@@ -42,6 +50,10 @@ public class ModuleManager {
         register(new Tracers());
         register(new Nametags());
         register(new NoWeather());
+        register(new StorageESP());
+        register(new HoleESP());
+        register(new Chams());
+        register(new BreakHighlight());
 
         // player
         register(new AutoMine());
@@ -50,11 +62,18 @@ public class ModuleManager {
         register(new ChestStealer());
         register(new Scaffold());
         register(new AutoFish());
+        register(new Freecam());
+        register(new AutoGap());
+        register(new AutoDisconnect());
+        register(new InventorySort());
 
         // world
         register(new Nuker());
         register(new Timer());
         register(new AntiHunger());
+        register(new PacketMine());
+        register(new AutoSign());
+        register(new AntiAFK());
 
         Aegis.LOGGER.info("Registered {} modules", modules.size());
     }

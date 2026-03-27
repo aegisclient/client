@@ -11,7 +11,7 @@ public class Fullbright extends Module {
     private double previousGamma = 1.0;
 
     public Fullbright() {
-        super("Fullbright", "See perfectly in the dark", Category.RENDER, GLFW.GLFW_KEY_B);
+        super("Fullbright", "See perfectly in the dark", Category.RENDER, GLFW.GLFW_KEY_UNKNOWN);
     }
 
     @Override

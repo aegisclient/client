@@ -24,7 +24,7 @@ public class KillAura extends Module {
     private int attackCooldown = 0;
 
     public KillAura() {
-        super("KillAura", "Automatically attacks nearby entities", Category.COMBAT, GLFW.GLFW_KEY_R);
+        super("KillAura", "Automatically attacks nearby entities", Category.COMBAT, GLFW.GLFW_KEY_UNKNOWN);
     }
 
     @Override

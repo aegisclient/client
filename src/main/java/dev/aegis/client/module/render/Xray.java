@@ -60,7 +60,7 @@ public class Xray extends Module {
     }
 
     public Xray() {
-        super("Xray", "See ores and valuable blocks through walls", Category.RENDER, GLFW.GLFW_KEY_X);
+        super("Xray", "See ores and valuable blocks through walls", Category.RENDER, GLFW.GLFW_KEY_UNKNOWN);
     }
 
     @Override

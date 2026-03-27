@@ -16,7 +16,7 @@ import org.lwjgl.glfw.GLFW;
 public class Scaffold extends Module {
 
     public Scaffold() {
-        super("Scaffold", "Automatically places blocks beneath you", Category.PLAYER, GLFW.GLFW_KEY_G);
+        super("Scaffold", "Automatically places blocks beneath you", Category.PLAYER, GLFW.GLFW_KEY_UNKNOWN);
     }
 
     @Override

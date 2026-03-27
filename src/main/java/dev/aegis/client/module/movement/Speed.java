@@ -10,7 +10,7 @@ public class Speed extends Module {
     private double speedMultiplier = 1.8;
 
     public Speed() {
-        super("Speed", "Increases movement speed beyond normal limits", Category.MOVEMENT, GLFW.GLFW_KEY_V);
+        super("Speed", "Increases movement speed beyond normal limits", Category.MOVEMENT, GLFW.GLFW_KEY_UNKNOWN);
     }
 
     @Override

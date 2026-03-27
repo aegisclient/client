@@ -10,7 +10,7 @@ public class Flight extends Module {
     private double flySpeed = 2.5;
 
     public Flight() {
-        super("Flight", "Allows you to fly in survival mode", Category.MOVEMENT, GLFW.GLFW_KEY_F);
+        super("Flight", "Allows you to fly in survival mode", Category.MOVEMENT, GLFW.GLFW_KEY_UNKNOWN);
     }
 
     @Override

@@ -10,7 +10,7 @@ import org.lwjgl.glfw.GLFW;
 public class Jesus extends Module {
 
     public Jesus() {
-        super("Jesus", "Walk on water and lava", Category.MOVEMENT, GLFW.GLFW_KEY_J);
+        super("Jesus", "Walk on water and lava", Category.MOVEMENT, GLFW.GLFW_KEY_UNKNOWN);
     }
 
     @Override
