@@ -10,7 +10,8 @@
         "MixinGameRenderer",
         "MixinClientConnection",
         "MixinWorldRenderer",
-        "MixinBlock"
+        "MixinBlock",
+        "MixinChatScreen"
     ],
     "injectors": {
         "defaultRequire": 1

@@ -1,6 +1,9 @@
 package dev.aegis.client;
 
+import dev.aegis.client.command.CommandManager;
+import dev.aegis.client.config.ConfigManager;
 import dev.aegis.client.event.EventBus;
+import dev.aegis.client.friend.FriendManager;
 import dev.aegis.client.gui.ClickGui;
 import dev.aegis.client.gui.HudOverlay;
 import dev.aegis.client.module.ModuleManager;
@@ -18,11 +21,14 @@ import org.slf4j.LoggerFactory;
 public class Aegis implements ClientModInitializer {
 
     public static final String NAME = "Aegis";
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION = "2.0.0";
     public static final Logger LOGGER = LoggerFactory.getLogger(NAME);
 
     private static Aegis INSTANCE;
     private ModuleManager moduleManager;
+    private CommandManager commandManager;
+    private ConfigManager configManager;
+    private FriendManager friendManager;
     private EventBus eventBus;
     private ClickGui clickGui;
     private HudOverlay hudOverlay;
@@ -35,11 +41,18 @@ public class Aegis implements ClientModInitializer {
         LOGGER.info("Loading {} v{}", NAME, VERSION);
 
         eventBus = new EventBus();
+        friendManager = new FriendManager();
         moduleManager = new ModuleManager();
+        commandManager = new CommandManager();
+        configManager = new ConfigManager();
         clickGui = new ClickGui();
         hudOverlay = new HudOverlay();
 
         moduleManager.init();
+        commandManager.init();
+
+        // load saved config
+        configManager.autoLoad();
 
         openGuiKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "Open Aegis GUI",
@@ -63,20 +76,19 @@ public class Aegis implements ClientModInitializer {
             hudOverlay.render(drawContext);
         });
 
-        LOGGER.info("{} loaded successfully! {} modules registered.", NAME, moduleManager.getModules().size());
+        LOGGER.info("{} v{} loaded! {} modules, {} commands.",
+                NAME, VERSION, moduleManager.getModules().size(), commandManager.getCommands().size());
     }
 
     public static Aegis getInstance() {
         return INSTANCE;
     }
 
-    public ModuleManager getModuleManager() {
-        return moduleManager;
-    }
-
-    public EventBus getEventBus() {
-        return eventBus;
-    }
+    public ModuleManager getModuleManager() { return moduleManager; }
+    public CommandManager getCommandManager() { return commandManager; }
+    public ConfigManager getConfigManager() { return configManager; }
+    public FriendManager getFriendManager() { return friendManager; }
+    public EventBus getEventBus() { return eventBus; }
 
     public static MinecraftClient mc() {
         return MinecraftClient.getInstance();
