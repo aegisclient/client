@@ -24,6 +24,7 @@ public class ModuleManager {
         register(new Criticals());
         register(new AutoTotem());
         register(new AutoArmor());
+        register(new BowAimbot());
 
         // movement
         register(new Flight());
