@@ -30,8 +30,7 @@ public class LauncherFrame extends JFrame {
     private static final Color GREEN = new Color(46, 204, 113);
     private static final Color RED = new Color(231, 76, 60);
 
-    // Key is decoded at runtime to avoid plaintext in source
-    private static final String PREMIUM_KEY = decodeKey(new int[]{85,108,116,114,111,110,74,65,82,86,73,83,55,50,51,50,33});
+    private static final String API_URL = "http://185.197.250.205:3000";
     private static final String KEY_FILE_NAME = ".aegis-premium-key";
 
     private JTextArea consoleArea;
@@ -397,34 +396,73 @@ public class LauncherFrame extends JFrame {
 
     private void selectEdition(boolean premium) {
         if (premium && !premiumUnlocked) {
-            // Show key input dialog
             String input = showPremiumKeyDialog();
-            if (input == null) return; // cancelled
+            if (input == null) return;
 
-            if (input.equals(PREMIUM_KEY)) {
-                premiumUnlocked = true;
-                savePremiumKey();
-                premiumBadge.setVisible(true);
-                log("[Premium] Key accepted! Premium edition unlocked.");
-                log("");
-            } else {
-                log("[Premium] Invalid key. Contact arhanh1234@gmail.com to purchase.");
-                log("");
-                JOptionPane.showMessageDialog(this,
-                        "Invalid premium key.\n\nEmail arhanh1234@gmail.com to purchase a premium key.",
-                        "Invalid Key", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            log("[Premium] Validating key with server...");
+            // Validate against API on background thread
+            String keyInput = input;
+            new Thread(() -> {
+                boolean valid = validateKeyWithApi(keyInput);
+                SwingUtilities.invokeLater(() -> {
+                    if (valid) {
+                        premiumUnlocked = true;
+                        savePremiumKey(keyInput);
+                        premiumBadge.setVisible(true);
+                        log("[Premium] Key accepted! Premium edition unlocked.");
+                        log("");
+                        applyEdition(true);
+                    } else {
+                        log("[Premium] Invalid or revoked key. Contact arhanh1234@gmail.com to purchase.");
+                        log("");
+                        JOptionPane.showMessageDialog(LauncherFrame.this,
+                                "Invalid premium key.\n\nEmail arhanh1234@gmail.com to purchase a premium key.",
+                                "Invalid Key", JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            }).start();
+            return;
         }
 
+        applyEdition(premium);
+    }
+
+    private void applyEdition(boolean premium) {
         premiumEdition = premium;
         freeButton.setForeground(premium ? TEXT_DIM : TEXT);
         premiumButton.setForeground(premium ? BG_DARK : TEXT_DIM);
         freeButton.repaint();
         premiumButton.repaint();
-
         launchButton.setText(premium ? "\u2605 LAUNCH PREMIUM" : "LAUNCH FREE");
         launchButton.repaint();
+    }
+
+    private boolean validateKeyWithApi(String key) {
+        try {
+            java.net.URL url = new java.net.URL(API_URL + "/api/validate-key");
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+
+            String username = usernameField.getText().trim();
+            String json = "{\"key\":\"" + key.replace("\"", "\\\"") + "\",\"username\":\"" + username.replace("\"", "\\\"") + "\"}";
+            conn.getOutputStream().write(json.getBytes());
+
+            int code = conn.getResponseCode();
+            if (code == 200) {
+                java.io.InputStream is = conn.getInputStream();
+                String body = new String(is.readAllBytes());
+                return body.contains("\"valid\":true");
+            }
+        } catch (Exception e) {
+            // API unreachable — fall back to local key file
+            SwingUtilities.invokeLater(() -> log("[Premium] Server unreachable, checking local cache..."));
+            return loadPremiumKey();
+        }
+        return false;
     }
 
     private String showPremiumKeyDialog() {
@@ -463,15 +501,15 @@ public class LauncherFrame extends JFrame {
             Path keyFile = getKeyFilePath();
             if (Files.exists(keyFile)) {
                 String stored = Files.readString(keyFile).trim();
-                return stored.equals(PREMIUM_KEY);
+                return !stored.isEmpty();
             }
         } catch (Exception ignored) {}
         return false;
     }
 
-    private void savePremiumKey() {
+    private void savePremiumKey(String key) {
         try {
-            Files.writeString(getKeyFilePath(), PREMIUM_KEY);
+            Files.writeString(getKeyFilePath(), key);
         } catch (Exception e) {
             log("[Premium] Warning: Could not save key file: " + e.getMessage());
         }
@@ -824,12 +862,6 @@ public class LauncherFrame extends JFrame {
                 }
             }
         }
-    }
-
-    private static String decodeKey(int[] codes) {
-        StringBuilder sb = new StringBuilder();
-        for (int c : codes) sb.append((char) c);
-        return sb.toString();
     }
 
     private void log(String message) {
