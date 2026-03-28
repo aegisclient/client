@@ -7,9 +7,9 @@
 
 <br>
 
-[![GitHub Release](https://img.shields.io/github/v/release/ArhanCodes/aegis?style=flat-square&color=FFD700)](https://github.com/ArhanCodes/aegis/releases)
-[![Modules](https://img.shields.io/badge/modules-134+-FFD700?style=flat-square)](https://github.com/ArhanCodes/aegis#modules-134)
-[![License](https://img.shields.io/github/license/ArhanCodes/aegis?style=flat-square&color=FFD700)](LICENSE.md)
+[![GitHub Release](https://img.shields.io/github/v/release/ArhanCodes/aegis?style=flat-square&color=FFD700)](https://github.com/aegisclient/client/releases)
+[![Modules](https://img.shields.io/badge/modules-134+-FFD700?style=flat-square)](https://github.com/aegisclient/client#modules-134)
+[![License](https://img.shields.io/github/license/aegisclient/client?style=flat-square&color=FFD700)](LICENSE)
 
 [Website](https://arhancodes.github.io/aegis) · [Download](https://github.com/ArhanCodes/aegis/releases) · [Issues](https://github.com/ArhanCodes/aegis/issues)
 
