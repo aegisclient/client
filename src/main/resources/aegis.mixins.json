@@ -11,7 +11,8 @@
         "MixinClientConnection",
         "MixinWorldRenderer",
         "MixinBlock",
-        "MixinChatScreen"
+        "MixinChatScreen",
+        "MixinPlayerEntityRenderer"
     ],
     "injectors": {
         "defaultRequire": 1

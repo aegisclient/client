@@ -7,6 +7,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.math.Box;
 import org.lwjgl.glfw.GLFW;
 
 public class ESP extends Module {
@@ -21,10 +22,10 @@ public class ESP extends Module {
 
     @Override
     public void onTick() {
-        if (mc.world == null) return;
+        if (mc.world == null || mc.player == null) return;
 
-        for (Entity entity : mc.world.getEntities()) {
-            if (entity == mc.player) continue;
+        Box searchBox = mc.player.getBoundingBox().expand(128);
+        for (Entity entity : mc.world.getOtherEntities(mc.player, searchBox)) {
             if (!(entity instanceof LivingEntity)) continue;
 
             boolean shouldGlow = false;
@@ -38,9 +39,9 @@ public class ESP extends Module {
 
     @Override
     protected void onDisable() {
-        // remove glow from all entities
-        if (mc.world == null) return;
-        for (Entity entity : mc.world.getEntities()) {
+        if (mc.world == null || mc.player == null) return;
+        Box searchBox = mc.player.getBoundingBox().expand(128);
+        for (Entity entity : mc.world.getOtherEntities(mc.player, searchBox)) {
             entity.setGlowing(false);
         }
     }

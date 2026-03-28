@@ -7,6 +7,7 @@ import dev.aegis.client.friend.FriendManager;
 import dev.aegis.client.gui.ClickGui;
 import dev.aegis.client.gui.HudOverlay;
 import dev.aegis.client.module.ModuleManager;
+import dev.aegis.client.premium.PremiumManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -32,6 +33,7 @@ public class Aegis implements ClientModInitializer {
     private EventBus eventBus;
     private ClickGui clickGui;
     private HudOverlay hudOverlay;
+    private PremiumManager premiumManager;
 
     private KeyBinding openGuiKey;
 
@@ -42,6 +44,8 @@ public class Aegis implements ClientModInitializer {
 
         eventBus = new EventBus();
         friendManager = new FriendManager();
+        premiumManager = new PremiumManager();
+        premiumManager.init();
         moduleManager = new ModuleManager();
         commandManager = new CommandManager();
         configManager = new ConfigManager();
@@ -89,6 +93,7 @@ public class Aegis implements ClientModInitializer {
     public ConfigManager getConfigManager() { return configManager; }
     public FriendManager getFriendManager() { return friendManager; }
     public EventBus getEventBus() { return eventBus; }
+    public PremiumManager getPremiumManager() { return premiumManager; }
 
     public static MinecraftClient mc() {
         return MinecraftClient.getInstance();

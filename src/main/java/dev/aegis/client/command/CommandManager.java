@@ -20,6 +20,7 @@ public class CommandManager {
         register(new VClipCommand());
         register(new HClipCommand());
         register(new PrefixCommand());
+        register(new ModulesCommand());
 
         Aegis.LOGGER.info("Registered {} commands", commands.size());
     }

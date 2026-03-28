@@ -1,12 +1,13 @@
 package dev.aegis.client.module.combat;
 
+import dev.aegis.client.Aegis;
 import dev.aegis.client.module.Category;
 import dev.aegis.client.module.Module;
 import org.lwjgl.glfw.GLFW;
 
 public class Reach extends Module {
 
-    private float reachDistance = 6.0f;
+    private float reachDistance = 4.5f;
 
     public Reach() {
         super("Reach", "Extends your attack and interaction reach", Category.COMBAT, GLFW.GLFW_KEY_UNKNOWN);
@@ -14,8 +15,7 @@ public class Reach extends Module {
 
     @Override
     public void onTick() {
-        // reach is applied through MixinClientPlayerInteractionManager
-        // this module just needs to be togglable
+        // reach modification applied through mixin or via getActiveReach() calls
     }
 
     public float getReachDistance() {
@@ -26,8 +26,17 @@ public class Reach extends Module {
         this.reachDistance = dist;
     }
 
+    /**
+     * Returns the active reach distance. Called from mixins and other modules.
+     * Returns vanilla reach (3.0) if module is not enabled.
+     */
     public static float getActiveReach() {
-        // called from mixins and other places
-        return 6.0f;
+        try {
+            Module mod = Aegis.getInstance().getModuleManager().getModule("Reach");
+            if (mod != null && mod.isEnabled() && mod instanceof Reach reach) {
+                return reach.reachDistance;
+            }
+        } catch (Exception ignored) {}
+        return 3.0f; // vanilla reach
     }
 }

@@ -2,7 +2,9 @@ package dev.aegis.client.module.render;
 
 import dev.aegis.client.module.Category;
 import dev.aegis.client.module.Module;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.util.math.Box;
 import org.lwjgl.glfw.GLFW;
 
 public class ItemESP extends Module {
@@ -13,23 +15,24 @@ public class ItemESP extends Module {
 
     @Override
     public void onTick() {
-        if (mc.world == null) return;
+        if (mc.world == null || mc.player == null) return;
 
-        // apply glowing to all item entities
-        mc.world.getEntities().forEach(entity -> {
+        Box searchBox = mc.player.getBoundingBox().expand(128);
+        for (Entity entity : mc.world.getOtherEntities(mc.player, searchBox)) {
             if (entity instanceof ItemEntity) {
                 entity.setGlowing(true);
             }
-        });
+        }
     }
 
     @Override
     protected void onDisable() {
-        if (mc.world == null) return;
-        mc.world.getEntities().forEach(entity -> {
+        if (mc.world == null || mc.player == null) return;
+        Box searchBox = mc.player.getBoundingBox().expand(128);
+        for (Entity entity : mc.world.getOtherEntities(mc.player, searchBox)) {
             if (entity instanceof ItemEntity) {
                 entity.setGlowing(false);
             }
-        });
+        }
     }
 }

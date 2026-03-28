@@ -3,3 +3,10 @@ build/
 launcher/build/
 launcher/.gradle/
 *.DS_Store
+.claude/
+premium-dist/
+aegis-launcher/
+website/
+assets/
+*.jar
+*.key

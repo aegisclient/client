@@ -54,7 +54,7 @@ public class Jesus extends Module {
             }
 
             mc.player.setVelocity(vel.x * 0.98, bobY, vel.z * 0.98);
-            mc.player.setOnGround(true);
+            // spoof ground state via position packet instead of inaccessible setOnGround
 
             // send spoofed position to server at fluid surface level
             if (bobTick % 2 == 0) {

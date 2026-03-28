@@ -20,29 +20,44 @@ public class LauncherFrame extends JFrame {
     private static final Color BG_DARK = new Color(10, 10, 15);
     private static final Color BG_PANEL = new Color(18, 18, 26);
     private static final Color BG_CARD = new Color(26, 26, 38);
+    private static final Color BG_INPUT = new Color(20, 20, 30);
     private static final Color GOLD = new Color(230, 168, 23);
     private static final Color GOLD_DIM = new Color(196, 138, 0);
-    private static final Color BLUE = new Color(0, 153, 221);
+    private static final Color BLUE = new Color(59, 130, 246);
     private static final Color TEXT = new Color(224, 224, 232);
     private static final Color TEXT_DIM = new Color(136, 136, 160);
     private static final Color BORDER = new Color(30, 30, 46);
     private static final Color GREEN = new Color(46, 204, 113);
     private static final Color RED = new Color(231, 76, 60);
 
+    // Key is decoded at runtime to avoid plaintext in source
+    private static final String PREMIUM_KEY = decodeKey(new int[]{85,108,116,114,111,110,74,65,82,86,73,83,55,50,51,50,33});
+    private static final String KEY_FILE_NAME = ".aegis-premium-key";
+
     private JTextArea consoleArea;
-    private JLabel statusFabric, statusFabricApi, statusAegis;
-    private JButton launchButton;
+    private JLabel statusJava, statusMinecraft, statusFabric, statusFabricApi, statusAegis;
+    private JLabel premiumBadge;
+    private JButton launchButton, installButton;
+    private JButton freeButton, premiumButton;
+    private JTextField usernameField;
+    private JSpinner memorySpinner;
     private GameLauncher gameLauncher;
+    private boolean premiumEdition = false;
+    private boolean premiumUnlocked = false;
 
     public LauncherFrame() {
-        setTitle("Aegis Launcher v" + AegisLauncher.VERSION);
-        setSize(960, 640);
-        setMinimumSize(new Dimension(860, 560));
+        setTitle("Aegis Launcher");
+        setSize(1000, 680);
+        setMinimumSize(new Dimension(900, 600));
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setBackground(BG_DARK);
 
         gameLauncher = new GameLauncher(this::log);
+
+        // Check if premium was previously unlocked
+        premiumUnlocked = loadPremiumKey();
+        premiumEdition = premiumUnlocked;
 
         initUI();
         refreshStatus();
@@ -57,9 +72,11 @@ public class LauncherFrame extends JFrame {
         setContentPane(root);
     }
 
+    // ==================== SIDEBAR ====================
+
     private JPanel createSidebar() {
         JPanel sidebar = new JPanel();
-        sidebar.setPreferredSize(new Dimension(260, 0));
+        sidebar.setPreferredSize(new Dimension(280, 0));
         sidebar.setBackground(BG_PANEL);
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER));
@@ -71,24 +88,25 @@ public class LauncherFrame extends JFrame {
         brandPanel.setBorder(new EmptyBorder(30, 20, 20, 20));
 
         JLabel title = new JLabel("AEGIS");
-        title.setFont(new Font("SansSerif", Font.BOLD, 32));
-        title.setForeground(GOLD);
+        title.setFont(new Font("SansSerif", Font.BOLD, 36));
+        title.setForeground(BLUE);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         brandPanel.add(title);
 
-        JLabel subtitle = new JLabel("Utility Client");
-        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        subtitle.setForeground(TEXT_DIM);
-        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        brandPanel.add(Box.createVerticalStrut(4));
-        brandPanel.add(subtitle);
-
-        JLabel version = new JLabel("v" + AegisLauncher.VERSION + " \u2022 MC " + AegisLauncher.MC_VERSION);
-        version.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        JLabel version = new JLabel("v" + AegisLauncher.VERSION + " | MC " + AegisLauncher.MC_VERSION);
+        version.setFont(new Font("Monospaced", Font.PLAIN, 12));
         version.setForeground(TEXT_DIM);
         version.setAlignmentX(Component.CENTER_ALIGNMENT);
-        brandPanel.add(Box.createVerticalStrut(6));
+        brandPanel.add(Box.createVerticalStrut(4));
         brandPanel.add(version);
+
+        premiumBadge = new JLabel("\u2605 PREMIUM");
+        premiumBadge.setFont(new Font("SansSerif", Font.BOLD, 13));
+        premiumBadge.setForeground(GOLD);
+        premiumBadge.setAlignmentX(Component.CENTER_ALIGNMENT);
+        premiumBadge.setVisible(premiumUnlocked);
+        brandPanel.add(Box.createVerticalStrut(6));
+        brandPanel.add(premiumBadge);
 
         sidebar.add(brandPanel);
         sidebar.add(createSeparator());
@@ -99,161 +117,155 @@ public class LauncherFrame extends JFrame {
         statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.Y_AXIS));
         statusPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        statusPanel.add(createSectionLabel("STATUS"));
-        statusPanel.add(Box.createVerticalStrut(12));
-
+        statusJava = createStatusDot();
+        statusMinecraft = createStatusDot();
         statusFabric = createStatusDot();
         statusFabricApi = createStatusDot();
         statusAegis = createStatusDot();
 
-        statusPanel.add(createStatusRow(statusFabric, "Fabric Loader"));
-        statusPanel.add(Box.createVerticalStrut(8));
-        statusPanel.add(createStatusRow(statusFabricApi, "Fabric API"));
-        statusPanel.add(Box.createVerticalStrut(8));
-        statusPanel.add(createStatusRow(statusAegis, "Aegis Client"));
+        statusPanel.add(createStatusRow(statusJava, "Java", true));
+        statusPanel.add(Box.createVerticalStrut(10));
+        statusPanel.add(createStatusRow(statusMinecraft, "Minecraft", true));
+        statusPanel.add(Box.createVerticalStrut(10));
+        statusPanel.add(createStatusRow(statusFabric, "Fabric", false));
+        statusPanel.add(Box.createVerticalStrut(10));
+        statusPanel.add(createStatusRow(statusFabricApi, "Fabric API", false));
+        statusPanel.add(Box.createVerticalStrut(10));
+        statusPanel.add(createStatusRow(statusAegis, "Aegis", false));
 
         sidebar.add(statusPanel);
         sidebar.add(createSeparator());
 
-        // modules
-        JPanel modulesPanel = new JPanel();
-        modulesPanel.setBackground(BG_PANEL);
-        modulesPanel.setLayout(new BoxLayout(modulesPanel, BoxLayout.Y_AXIS));
-        modulesPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        modulesPanel.add(createSectionLabel("MODULES"));
-        modulesPanel.add(Box.createVerticalStrut(10));
-
-        String[][] cats = {
-                {"Combat", "6", "#e74c3c"},
-                {"Movement", "7", "#3498db"},
-                {"Render", "6", "#2ecc71"},
-                {"Player", "6", "#f39c12"},
-                {"World", "3", "#9b59b6"}
-        };
-
-        for (String[] cat : cats) {
-            JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-            row.setBackground(BG_PANEL);
-            row.setAlignmentX(Component.LEFT_ALIGNMENT);
-            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
-
-            JLabel dot = new JLabel("\u25CF ");
-            dot.setForeground(Color.decode(cat[2]));
-            dot.setFont(new Font("SansSerif", Font.PLAIN, 10));
-
-            JLabel name = new JLabel(cat[0]);
-            name.setForeground(TEXT);
-            name.setFont(new Font("SansSerif", Font.PLAIN, 12));
-
-            JLabel count = new JLabel("  " + cat[1]);
-            count.setForeground(TEXT_DIM);
-            count.setFont(new Font("Monospaced", Font.PLAIN, 11));
-
-            row.add(dot);
-            row.add(name);
-            row.add(count);
-            modulesPanel.add(row);
-            modulesPanel.add(Box.createVerticalStrut(4));
-        }
-
-        JLabel total = new JLabel("28 modules total");
-        total.setFont(new Font("SansSerif", Font.ITALIC, 11));
-        total.setForeground(GOLD_DIM);
-        total.setAlignmentX(Component.LEFT_ALIGNMENT);
-        modulesPanel.add(Box.createVerticalStrut(8));
-        modulesPanel.add(total);
-
-        sidebar.add(modulesPanel);
         sidebar.add(Box.createVerticalGlue());
 
-        // footer
-        JPanel footer = new JPanel();
-        footer.setBackground(BG_PANEL);
-        footer.setBorder(new EmptyBorder(10, 20, 15, 20));
-        footer.setLayout(new BoxLayout(footer, BoxLayout.Y_AXIS));
-        footer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        // module count badge
+        JPanel badgePanel = new JPanel();
+        badgePanel.setBackground(BG_PANEL);
+        badgePanel.setBorder(new EmptyBorder(10, 30, 20, 30));
+        badgePanel.setLayout(new BoxLayout(badgePanel, BoxLayout.Y_AXIS));
+        badgePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
 
-        JLabel footerLabel = new JLabel("Single-player testing only");
-        footerLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
-        footerLabel.setForeground(TEXT_DIM);
-        footerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        footer.add(footerLabel);
-        sidebar.add(footer);
+        JPanel badgeCard = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp = new GradientPaint(0, 0, new Color(20, 30, 60), getWidth(), getHeight(), new Color(30, 20, 50));
+                g2.setPaint(gp);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 16, 16));
+                g2.setColor(new Color(59, 130, 246, 60));
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1, getHeight() - 1, 16, 16));
+                g2.dispose();
+            }
+        };
+        badgeCard.setLayout(new BoxLayout(badgeCard, BoxLayout.Y_AXIS));
+        badgeCard.setBorder(new EmptyBorder(16, 20, 16, 20));
+        badgeCard.setOpaque(false);
+        badgeCard.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel countLabel = new JLabel("142");
+        countLabel.setFont(new Font("SansSerif", Font.BOLD, 42));
+        countLabel.setForeground(BLUE);
+        countLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        badgeCard.add(countLabel);
+
+        JLabel modulesLabel = new JLabel("MODULES");
+        modulesLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        modulesLabel.setForeground(TEXT_DIM);
+        modulesLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        badgeCard.add(modulesLabel);
+
+        badgePanel.add(badgeCard);
+        sidebar.add(badgePanel);
 
         return sidebar;
     }
+
+    // ==================== MAIN PANEL ====================
 
     private JPanel createMainPanel() {
         JPanel main = new JPanel(new BorderLayout(0, 0));
         main.setBackground(BG_DARK);
 
-        // action bar with two rows
-        JPanel actionBar = new JPanel();
-        actionBar.setBackground(BG_DARK);
-        actionBar.setLayout(new BoxLayout(actionBar, BoxLayout.Y_AXIS));
-        actionBar.setBorder(new EmptyBorder(8, 8, 0, 8));
+        // top section with controls
+        JPanel topPanel = new JPanel();
+        topPanel.setBackground(BG_DARK);
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
+        topPanel.setBorder(new EmptyBorder(24, 28, 0, 28));
 
-        // row 1: main actions
-        JPanel row1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
-        row1.setBackground(BG_DARK);
+        // "Launch Minecraft" header
+        JLabel header = new JLabel("Launch Minecraft");
+        header.setFont(new Font("SansSerif", Font.BOLD, 26));
+        header.setForeground(TEXT);
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
+        topPanel.add(header);
 
-        launchButton = createStyledButton("LAUNCH MINECRAFT", GOLD, BG_DARK);
-        launchButton.setPreferredSize(new Dimension(200, 42));
+        // gradient separator line
+        topPanel.add(Box.createVerticalStrut(12));
+        JPanel gradLine = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                GradientPaint gp = new GradientPaint(0, 0, BLUE, getWidth(), 0, new Color(139, 92, 246));
+                g2.setPaint(gp);
+                g2.fillRect(0, 0, getWidth(), 2);
+                g2.dispose();
+            }
+        };
+        gradLine.setPreferredSize(new Dimension(0, 2));
+        gradLine.setMaximumSize(new Dimension(Integer.MAX_VALUE, 2));
+        gradLine.setAlignmentX(Component.LEFT_ALIGNMENT);
+        topPanel.add(gradLine);
+
+        // username + memory row
+        topPanel.add(Box.createVerticalStrut(20));
+        JPanel inputRow = new JPanel(new GridLayout(1, 2, 20, 0));
+        inputRow.setBackground(BG_DARK);
+        inputRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        inputRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+
+        inputRow.add(createInputGroup("USERNAME", createUsernameField()));
+        inputRow.add(createInputGroup("MEMORY (MB)", createMemorySpinner()));
+
+        topPanel.add(inputRow);
+
+        // edition selector
+        topPanel.add(Box.createVerticalStrut(16));
+        JPanel editionPanel = createEditionPanel();
+        editionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        topPanel.add(editionPanel);
+
+        // action buttons
+        topPanel.add(Box.createVerticalStrut(16));
+        JPanel actionRow = new JPanel(new GridLayout(1, 2, 16, 0));
+        actionRow.setBackground(BG_DARK);
+        actionRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        actionRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
+        installButton = createStyledButton("INSTALL", BG_CARD, TEXT);
+        installButton.setPreferredSize(new Dimension(0, 48));
+        installButton.addActionListener(e -> onInstall());
+
+        launchButton = createGoldButton(premiumEdition ? "\u2605 LAUNCH PREMIUM" : "LAUNCH FREE");
+        launchButton.setPreferredSize(new Dimension(0, 48));
         launchButton.addActionListener(e -> onLaunch());
 
-        JButton installBtn = createStyledButton("INSTALL MOD", BG_CARD, TEXT);
-        installBtn.setPreferredSize(new Dimension(140, 42));
-        installBtn.addActionListener(e -> onInstall());
+        actionRow.add(installButton);
+        actionRow.add(launchButton);
+        topPanel.add(actionRow);
 
-        JButton refreshBtn = createStyledButton("REFRESH", BG_CARD, TEXT);
-        refreshBtn.setPreferredSize(new Dimension(100, 42));
-        refreshBtn.addActionListener(e -> refreshStatus());
-
-        JButton folderBtn = createStyledButton("MODS FOLDER", BG_CARD, TEXT);
-        folderBtn.setPreferredSize(new Dimension(130, 42));
-        folderBtn.addActionListener(e -> openModsFolder());
-
-        row1.add(launchButton);
-        row1.add(installBtn);
-        row1.add(refreshBtn);
-        row1.add(folderBtn);
-
-        // row 2: setup helpers
-        JPanel row2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
-        row2.setBackground(BG_DARK);
-
-        JButton fabricBtn = createStyledButton("GET FABRIC LOADER", BLUE, BG_DARK);
-        fabricBtn.setPreferredSize(new Dimension(180, 34));
-        fabricBtn.addActionListener(e -> downloadFabricInstaller());
-
-        JButton fabricApiBtn = createStyledButton("GET FABRIC API", BLUE, BG_DARK);
-        fabricApiBtn.setPreferredSize(new Dimension(160, 34));
-        fabricApiBtn.addActionListener(e -> downloadFabricApi());
-
-        row2.add(fabricBtn);
-        row2.add(fabricApiBtn);
-
-        actionBar.add(row1);
-        actionBar.add(row2);
-
-        main.add(actionBar, BorderLayout.NORTH);
+        main.add(topPanel, BorderLayout.NORTH);
 
         // console
         JPanel consolePanel = new JPanel(new BorderLayout());
         consolePanel.setBackground(BG_DARK);
-        consolePanel.setBorder(new EmptyBorder(8, 20, 20, 20));
-
-        JLabel consoleTitle = new JLabel("  CONSOLE");
-        consoleTitle.setFont(new Font("SansSerif", Font.BOLD, 11));
-        consoleTitle.setForeground(TEXT_DIM);
-        consoleTitle.setBorder(new EmptyBorder(0, 0, 8, 0));
-        consolePanel.add(consoleTitle, BorderLayout.NORTH);
+        consolePanel.setBorder(new EmptyBorder(16, 28, 24, 28));
 
         consoleArea = new JTextArea();
         consoleArea.setEditable(false);
         consoleArea.setBackground(new Color(8, 8, 12));
-        consoleArea.setForeground(TEXT);
+        consoleArea.setForeground(new Color(100, 160, 255));
         consoleArea.setCaretColor(GOLD);
         consoleArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         consoleArea.setBorder(new EmptyBorder(12, 12, 12, 12));
@@ -267,23 +279,207 @@ public class LauncherFrame extends JFrame {
 
         main.add(consolePanel, BorderLayout.CENTER);
 
-        log("===========================================");
-        log("  AEGIS LAUNCHER v" + AegisLauncher.VERSION);
-        log("  Minecraft " + AegisLauncher.MC_VERSION + " | Fabric");
-        log("===========================================");
-        log("");
-        log("Keybinds:");
-        log("  Right Shift  - Open ClickGUI");
-        log("  R - KillAura  |  F - Flight  |  V - Speed");
-        log("  B - Fullbright |  X - Xray   |  G - Scaffold");
-        log("  J - Jesus      |  N - Nuker");
-        log("");
-
         return main;
     }
 
+    private JPanel createInputGroup(String label, JComponent field) {
+        JPanel group = new JPanel();
+        group.setBackground(BG_DARK);
+        group.setLayout(new BoxLayout(group, BoxLayout.Y_AXIS));
+
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("SansSerif", Font.BOLD, 10));
+        lbl.setForeground(TEXT_DIM);
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        group.add(lbl);
+        group.add(Box.createVerticalStrut(6));
+
+        field.setAlignmentX(Component.LEFT_ALIGNMENT);
+        group.add(field);
+
+        return group;
+    }
+
+    private JTextField createUsernameField() {
+        usernameField = new JTextField("Player");
+        usernameField.setBackground(BG_INPUT);
+        usernameField.setForeground(TEXT);
+        usernameField.setCaretColor(TEXT);
+        usernameField.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        usernameField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER),
+                new EmptyBorder(8, 12, 8, 12)
+        ));
+        usernameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        return usernameField;
+    }
+
+    private JSpinner createMemorySpinner() {
+        memorySpinner = new JSpinner(new SpinnerNumberModel(4096, 1024, 16384, 512));
+        memorySpinner.setBackground(BG_INPUT);
+        memorySpinner.setForeground(TEXT);
+        memorySpinner.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        memorySpinner.setBorder(BorderFactory.createLineBorder(BORDER));
+
+        JComponent editor = memorySpinner.getEditor();
+        if (editor instanceof JSpinner.DefaultEditor) {
+            JTextField tf = ((JSpinner.DefaultEditor) editor).getTextField();
+            tf.setBackground(BG_INPUT);
+            tf.setForeground(TEXT);
+            tf.setCaretColor(TEXT);
+            tf.setBorder(new EmptyBorder(8, 12, 8, 12));
+        }
+        memorySpinner.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        return memorySpinner;
+    }
+
+    private JPanel createEditionPanel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(BG_DARK);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        JLabel lbl = new JLabel("EDITION");
+        lbl.setFont(new Font("SansSerif", Font.BOLD, 10));
+        lbl.setForeground(TEXT_DIM);
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(lbl);
+        panel.add(Box.createVerticalStrut(6));
+
+        JPanel btnRow = new JPanel(new GridLayout(1, 2, 0, 0));
+        btnRow.setBackground(BG_DARK);
+        btnRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+
+        freeButton = createEditionButton("FREE", !premiumEdition);
+        premiumButton = createEditionButton("\u2605 PREMIUM", premiumEdition);
+
+        freeButton.addActionListener(e -> selectEdition(false));
+        premiumButton.addActionListener(e -> selectEdition(true));
+
+        btnRow.add(freeButton);
+        btnRow.add(premiumButton);
+        panel.add(btnRow);
+
+        return panel;
+    }
+
+    private JButton createEditionButton(String text, boolean selected) {
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                boolean isActive = text.contains("PREMIUM") ? premiumEdition : !premiumEdition;
+                if (isActive) {
+                    if (text.contains("PREMIUM")) {
+                        GradientPaint gp = new GradientPaint(0, 0, GOLD, getWidth(), 0, new Color(255, 180, 0));
+                        g2.setPaint(gp);
+                    } else {
+                        g2.setColor(BG_CARD);
+                    }
+                } else {
+                    g2.setColor(BG_CARD.darker());
+                }
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setForeground(selected && text.contains("PREMIUM") ? BG_DARK : TEXT);
+        btn.setFont(new Font("SansSerif", Font.BOLD, 13));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setOpaque(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return btn;
+    }
+
+    private void selectEdition(boolean premium) {
+        if (premium && !premiumUnlocked) {
+            // Show key input dialog
+            String input = showPremiumKeyDialog();
+            if (input == null) return; // cancelled
+
+            if (input.equals(PREMIUM_KEY)) {
+                premiumUnlocked = true;
+                savePremiumKey();
+                premiumBadge.setVisible(true);
+                log("[Premium] Key accepted! Premium edition unlocked.");
+                log("");
+            } else {
+                log("[Premium] Invalid key. Contact arhanh1234@gmail.com to purchase.");
+                log("");
+                JOptionPane.showMessageDialog(this,
+                        "Invalid premium key.\n\nEmail arhanh1234@gmail.com to purchase a premium key.",
+                        "Invalid Key", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+
+        premiumEdition = premium;
+        freeButton.setForeground(premium ? TEXT_DIM : TEXT);
+        premiumButton.setForeground(premium ? BG_DARK : TEXT_DIM);
+        freeButton.repaint();
+        premiumButton.repaint();
+
+        launchButton.setText(premium ? "\u2605 LAUNCH PREMIUM" : "LAUNCH FREE");
+        launchButton.repaint();
+    }
+
+    private String showPremiumKeyDialog() {
+        JPanel panel = new JPanel();
+        panel.setBackground(BG_CARD);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        JLabel msg = new JLabel("<html><b>Enter Premium Key</b><br><br>Enter your Aegis premium key below.<br>Don't have one? Email arhanh1234@gmail.com</html>");
+        msg.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        panel.add(msg);
+        panel.add(Box.createVerticalStrut(12));
+
+        JPasswordField keyField = new JPasswordField(20);
+        keyField.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        panel.add(keyField);
+
+        int result = JOptionPane.showConfirmDialog(this, panel, "Aegis Premium",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            return new String(keyField.getPassword());
+        }
+        return null;
+    }
+
+    // ==================== PREMIUM KEY PERSISTENCE ====================
+
+    private Path getKeyFilePath() {
+        String home = System.getProperty("user.home");
+        return Paths.get(home, KEY_FILE_NAME);
+    }
+
+    private boolean loadPremiumKey() {
+        try {
+            Path keyFile = getKeyFilePath();
+            if (Files.exists(keyFile)) {
+                String stored = Files.readString(keyFile).trim();
+                return stored.equals(PREMIUM_KEY);
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    private void savePremiumKey() {
+        try {
+            Files.writeString(getKeyFilePath(), PREMIUM_KEY);
+        } catch (Exception e) {
+            log("[Premium] Warning: Could not save key file: " + e.getMessage());
+        }
+    }
+
+    // ==================== ACTIONS ====================
+
     private void autoInstallAegis() {
-        // look for the built JAR relative to the launcher
         File jarDir = new File(System.getProperty("user.dir"));
         File[] searchPaths = {
                 new File(jarDir, "../build/libs/aegis-client-1.0.0.jar"),
@@ -320,8 +516,139 @@ public class LauncherFrame extends JFrame {
         }
     }
 
+    private void refreshStatus() {
+        boolean java = true; // we're running Java, so yes
+        boolean minecraft = MinecraftPaths.getMinecraftDir().exists();
+        boolean fabric = MinecraftPaths.isFabricInstalled();
+        boolean fabricApi = MinecraftPaths.isFabricApiInstalled();
+        boolean aegis = MinecraftPaths.isAegisInstalled();
+
+        updateIndicator(statusJava, java, "Found", "Not Found");
+        updateIndicator(statusMinecraft, minecraft, "Found", "Not Found");
+        updateIndicator(statusFabric, fabric, "Installed", "Not Found");
+        updateIndicator(statusFabricApi, fabricApi, "Installed", "Not Found");
+        updateIndicator(statusAegis, aegis, "Installed", "Not Found");
+
+        log("[Status] Java: Found");
+        log("[Status] Minecraft: " + (minecraft ? "Found" : "NOT FOUND"));
+        log("[Status] Fabric: " + (fabric ? "Installed" : "NOT FOUND"));
+        log("[Status] Fabric API: " + (fabricApi ? "Installed" : "NOT FOUND"));
+        log("[Status] Aegis: " + (aegis ? "Installed" : "NOT FOUND"));
+
+        if (!fabric) {
+            log("[!] Fabric Loader not found. Installing automatically...");
+            downloadFabricInstaller();
+        }
+        if (!fabricApi) {
+            log("[!] Fabric API not found. Installing automatically...");
+            downloadFabricApi();
+        }
+        if (fabric && fabricApi && aegis) {
+            log("[OK] Everything ready! Select edition and click Launch.");
+        }
+        log("");
+    }
+
+    private void onLaunch() {
+        if (!MinecraftPaths.isFabricInstalled()) {
+            log("[Launch] Fabric Loader not installed! Installing...");
+            downloadFabricInstaller();
+            return;
+        }
+        if (!MinecraftPaths.isFabricApiInstalled()) {
+            log("[Launch] Fabric API not installed! Installing...");
+            downloadFabricApi();
+            return;
+        }
+
+        String username = usernameField.getText().trim();
+        if (username.isEmpty()) username = "Player";
+        int memory = (int) memorySpinner.getValue();
+
+        String edition = premiumEdition ? "Premium" : "Free";
+        log("[Launch] Launching (" + edition + ") with username: " + username + ", memory: " + memory + "MB");
+
+        // If premium, install the premium JAR; otherwise install the free JAR
+        if (premiumEdition) {
+            installPremiumJar();
+        }
+
+        launchButton.setEnabled(false);
+        log("[Launch] Minecraft Launcher opened!");
+        log("[Launch] Select the \"Aegis Client\" profile and click Play.");
+
+        new Thread(() -> {
+            boolean success = gameLauncher.launchMinecraft();
+            SwingUtilities.invokeLater(() -> {
+                if (success) {
+                    log("[Launch] Minecraft opened!");
+                } else {
+                    log("[Launch] Launch failed. Check errors above.");
+                }
+                log("");
+                launchButton.setEnabled(true);
+            });
+        }).start();
+    }
+
+    private void installPremiumJar() {
+        // Look for premium JAR in premium-dist
+        File jarDir = new File(System.getProperty("user.dir"));
+        File[] premiumPaths = {
+                new File(jarDir, "../premium-dist/aegis-client-premium-1.0.0.jar"),
+                new File(jarDir, "premium-dist/aegis-client-premium-1.0.0.jar"),
+                new File(jarDir.getParentFile(), "premium-dist/aegis-client-premium-1.0.0.jar"),
+        };
+
+        for (File path : premiumPaths) {
+            if (path.exists()) {
+                try {
+                    gameLauncher.installAegisMod(path);
+                    log("[Premium] Premium JAR installed.");
+                } catch (Exception e) {
+                    log("[Premium] Could not install premium JAR: " + e.getMessage());
+                }
+                return;
+            }
+        }
+
+        // If no premium JAR found, the regular JAR should still work
+        // (it has the marker resource if built from this repo)
+        log("[Premium] Premium JAR not found in premium-dist/, using installed version.");
+    }
+
+    private void onInstall() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Select Aegis JAR");
+        chooser.setFileFilter(new FileNameExtensionFilter("JAR Files", "jar"));
+
+        File buildLibs = new File(System.getProperty("user.dir"), "../build/libs");
+        if (buildLibs.exists()) chooser.setCurrentDirectory(buildLibs);
+
+        int result = chooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selected = chooser.getSelectedFile();
+            log("[Install] Installing " + selected.getName() + "...");
+
+            new Thread(() -> {
+                try {
+                    gameLauncher.installAegisMod(selected);
+                    SwingUtilities.invokeLater(() -> {
+                        log("[Install] Success! Aegis installed.");
+                        log("");
+                        refreshStatus();
+                    });
+                } catch (Exception e) {
+                    SwingUtilities.invokeLater(() -> {
+                        log("[Install] ERROR: " + e.getMessage());
+                        log("");
+                    });
+                }
+            }).start();
+        }
+    }
+
     private void downloadFabricInstaller() {
-        log("[Fabric] Downloading Fabric Installer...");
         new Thread(() -> {
             try {
                 String installerUrl = "https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.0.1/fabric-installer-1.0.1.jar";
@@ -337,7 +664,6 @@ public class LauncherFrame extends JFrame {
                     log("[Fabric] Select MC version 1.20.4 and click Install.");
                 });
 
-                // launch the fabric installer
                 ProcessBuilder pb = new ProcessBuilder("java", "-jar", installerFile.getAbsolutePath());
                 pb.start();
 
@@ -355,10 +681,8 @@ public class LauncherFrame extends JFrame {
     }
 
     private void downloadFabricApi() {
-        log("[Fabric API] Downloading Fabric API for MC 1.20.4...");
         new Thread(() -> {
             try {
-                // Modrinth API to get the download URL
                 String apiUrl = "https://cdn.modrinth.com/data/P7dR8mSH/versions/tFw0iWAk/fabric-api-0.97.3%2B1.20.4.jar";
                 File modsDir = MinecraftPaths.getModsDir();
                 if (!modsDir.exists()) modsDir.mkdirs();
@@ -371,12 +695,10 @@ public class LauncherFrame extends JFrame {
 
                 SwingUtilities.invokeLater(() -> {
                     log("[Fabric API] Installed to mods folder!");
-                    refreshStatus();
                 });
             } catch (Exception e) {
                 SwingUtilities.invokeLater(() -> {
                     log("[Fabric API] Download failed: " + e.getMessage());
-                    log("[Fabric API] Download manually from Modrinth");
                     try {
                         Desktop.getDesktop().browse(new URI("https://modrinth.com/mod/fabric-api/versions?g=1.20.4"));
                     } catch (Exception ignored) {}
@@ -386,106 +708,8 @@ public class LauncherFrame extends JFrame {
         }).start();
     }
 
-    private void refreshStatus() {
-        boolean fabric = MinecraftPaths.isFabricInstalled();
-        boolean fabricApi = MinecraftPaths.isFabricApiInstalled();
-        boolean aegis = MinecraftPaths.isAegisInstalled();
+    // ==================== UI HELPERS ====================
 
-        updateIndicator(statusFabric, fabric);
-        updateIndicator(statusFabricApi, fabricApi);
-        updateIndicator(statusAegis, aegis);
-
-        log("[Status] Fabric Loader: " + (fabric ? "INSTALLED" : "NOT FOUND"));
-        log("[Status] Fabric API: " + (fabricApi ? "INSTALLED" : "NOT FOUND"));
-        log("[Status] Aegis Client: " + (aegis ? "INSTALLED" : "NOT FOUND"));
-
-        if (!fabric) {
-            log("[!] Click GET FABRIC LOADER above to install it");
-        }
-        if (!fabricApi) {
-            log("[!] Click GET FABRIC API above to download it");
-        }
-        if (fabric && fabricApi && aegis) {
-            log("[OK] Everything installed! Click LAUNCH MINECRAFT to play.");
-        }
-        log("");
-    }
-
-    private void onLaunch() {
-        if (!MinecraftPaths.isFabricInstalled()) {
-            log("[Launch] Fabric Loader not installed!");
-            log("[Launch] Click GET FABRIC LOADER to install it first.");
-            log("");
-            return;
-        }
-
-        log("[Launch] Starting Minecraft...");
-        launchButton.setEnabled(false);
-
-        new Thread(() -> {
-            boolean success = gameLauncher.launchMinecraft();
-            SwingUtilities.invokeLater(() -> {
-                if (success) {
-                    log("[Launch] Done! Use Right Shift in-game to open ClickGUI.");
-                } else {
-                    log("[Launch] Failed to launch. Check the errors above.");
-                }
-                log("");
-                launchButton.setEnabled(true);
-            });
-        }).start();
-    }
-
-    private void onInstall() {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Select Aegis JAR");
-        chooser.setFileFilter(new FileNameExtensionFilter("JAR Files", "jar"));
-
-        File buildLibs = new File(System.getProperty("user.dir"), "../build/libs");
-        if (buildLibs.exists()) {
-            chooser.setCurrentDirectory(buildLibs);
-        }
-
-        int result = chooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File selected = chooser.getSelectedFile();
-            log("[Install] Installing " + selected.getName() + "...");
-
-            new Thread(() -> {
-                try {
-                    gameLauncher.installAegisMod(selected);
-                    SwingUtilities.invokeLater(() -> {
-                        log("[Install] Success! Aegis is now in your mods folder.");
-                        log("");
-                        refreshStatus();
-                    });
-                } catch (Exception e) {
-                    SwingUtilities.invokeLater(() -> {
-                        log("[Install] ERROR: " + e.getMessage());
-                        log("");
-                    });
-                }
-            }).start();
-        }
-    }
-
-    private void openModsFolder() {
-        File modsDir = MinecraftPaths.getModsDir();
-        if (!modsDir.exists()) {
-            modsDir.mkdirs();
-            log("[Folder] Created mods directory");
-        }
-        try {
-            Desktop.getDesktop().open(modsDir);
-            log("[Folder] Opened: " + modsDir.getAbsolutePath());
-        } catch (Exception e) {
-            log("[Folder] Could not open: " + e.getMessage());
-            log("[Folder] Path: " + modsDir.getAbsolutePath());
-        }
-        log("");
-    }
-
-    // helper methods
     private JButton createStyledButton(String text, Color bg, Color fg) {
         JButton btn = new JButton(text) {
             @Override
@@ -505,7 +729,37 @@ public class LauncherFrame extends JFrame {
             }
         };
         btn.setForeground(fg);
-        btn.setFont(new Font("SansSerif", Font.BOLD, 11));
+        btn.setFont(new Font("SansSerif", Font.BOLD, 13));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setOpaque(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return btn;
+    }
+
+    private JButton createGoldButton(String text) {
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp;
+                if (getModel().isPressed()) {
+                    gp = new GradientPaint(0, 0, GOLD_DIM, getWidth(), 0, new Color(200, 140, 0));
+                } else if (getModel().isRollover()) {
+                    gp = new GradientPaint(0, 0, GOLD.brighter(), getWidth(), 0, new Color(255, 200, 40));
+                } else {
+                    gp = new GradientPaint(0, 0, GOLD, getWidth(), 0, new Color(255, 180, 0));
+                }
+                g2.setPaint(gp);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setForeground(BG_DARK);
+        btn.setFont(new Font("SansSerif", Font.BOLD, 14));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
@@ -522,36 +776,60 @@ public class LauncherFrame extends JFrame {
         return sep;
     }
 
-    private JLabel createSectionLabel(String text) {
-        JLabel label = new JLabel(text);
-        label.setFont(new Font("SansSerif", Font.BOLD, 11));
-        label.setForeground(TEXT_DIM);
-        label.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return label;
-    }
-
     private JLabel createStatusDot() {
         JLabel label = new JLabel("\u25CF");
-        label.setFont(new Font("SansSerif", Font.PLAIN, 10));
+        label.setFont(new Font("SansSerif", Font.PLAIN, 12));
         return label;
     }
 
-    private JPanel createStatusRow(JLabel indicator, String name) {
-        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+    private JPanel createStatusRow(JLabel indicator, String name, boolean isInfo) {
+        JPanel row = new JPanel(new BorderLayout());
         row.setBackground(BG_PANEL);
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        left.setBackground(BG_PANEL);
+        left.add(indicator);
         JLabel label = new JLabel("  " + name);
         label.setForeground(TEXT);
-        label.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        row.add(indicator);
-        row.add(label);
+        label.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        left.add(label);
+
+        // Status text on the right
+        JLabel statusText = new JLabel(isInfo ? "Found" : "Checking...");
+        statusText.setForeground(TEXT);
+        statusText.setFont(new Font("SansSerif", Font.BOLD, 12));
+        statusText.setName("statusText_" + name);
+
+        row.add(left, BorderLayout.WEST);
+        row.add(statusText, BorderLayout.EAST);
+
         return row;
     }
 
-    private void updateIndicator(JLabel indicator, boolean installed) {
+    private void updateIndicator(JLabel indicator, boolean installed, String trueText, String falseText) {
         indicator.setForeground(installed ? GREEN : RED);
-        indicator.setToolTipText(installed ? "Installed" : "Not found");
+
+        // Update the status text in the parent row
+        Container parent = indicator.getParent();
+        if (parent != null) {
+            Container row = parent.getParent();
+            if (row instanceof JPanel) {
+                for (Component c : ((JPanel) row).getComponents()) {
+                    if (c instanceof JLabel && ((JLabel) c).getName() != null && ((JLabel) c).getName().startsWith("statusText_")) {
+                        ((JLabel) c).setText(installed ? trueText : falseText);
+                        ((JLabel) c).setForeground(installed ? GREEN : RED);
+                    }
+                }
+            }
+        }
+    }
+
+    private static String decodeKey(int[] codes) {
+        StringBuilder sb = new StringBuilder();
+        for (int c : codes) sb.append((char) c);
+        return sb.toString();
     }
 
     private void log(String message) {

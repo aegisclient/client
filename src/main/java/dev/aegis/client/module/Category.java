@@ -8,7 +8,8 @@ public enum Category {
     WORLD("World"),
     EXPLOIT("Exploit"),
     FUN("Fun"),
-    MISC("Misc");
+    MISC("Misc"),
+    PREMIUM("Premium");
 
     private final String displayName;
 

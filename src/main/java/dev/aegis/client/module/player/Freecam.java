@@ -1,16 +1,19 @@
 package dev.aegis.client.module.player;
 
+import dev.aegis.client.event.Event;
+import dev.aegis.client.event.EventListener;
+import dev.aegis.client.event.events.PacketEvent;
 import dev.aegis.client.module.Category;
 import dev.aegis.client.module.Module;
+import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.util.math.Vec3d;
 import org.lwjgl.glfw.GLFW;
 
-public class Freecam extends Module {
+public class Freecam extends Module implements EventListener {
 
     private double flySpeed = 2.0;
     private Vec3d savedPos = null;
     private float savedYaw, savedPitch;
-    private boolean savedOnGround;
 
     public Freecam() {
         super("Freecam", "Detach camera and fly around freely while your body stays in place", Category.PLAYER, GLFW.GLFW_KEY_UNKNOWN);
@@ -22,7 +25,17 @@ public class Freecam extends Module {
             savedPos = mc.player.getPos();
             savedYaw = mc.player.getYaw();
             savedPitch = mc.player.getPitch();
-            savedOnGround = mc.player.isOnGround();
+        }
+    }
+
+    @Override
+    public void onEvent(Event event) {
+        if (!(event instanceof PacketEvent packetEvent)) return;
+        if (packetEvent.getDirection() != PacketEvent.Direction.SEND) return;
+
+        // block all outgoing movement packets to keep server-side position frozen
+        if (packetEvent.getPacket() instanceof PlayerMoveC2SPacket) {
+            packetEvent.cancel();
         }
     }
 
@@ -30,7 +43,7 @@ public class Freecam extends Module {
     public void onTick() {
         if (mc.player == null) return;
 
-        // keep player model in place
+        // enable noclip so we can fly through blocks
         mc.player.noClip = true;
         mc.player.setNoGravity(true);
 
@@ -63,10 +76,10 @@ public class Freecam extends Module {
 
     @Override
     protected void onDisable() {
-        if (mc.player != null && savedPos != null) {
-            mc.player.setPos(savedPos.x, savedPos.y, savedPos.z);
-            mc.player.setYaw(savedYaw);
-            mc.player.setPitch(savedPitch);
+        if (mc.player != null) {
+            if (savedPos != null) {
+                mc.player.setPos(savedPos.x, savedPos.y, savedPos.z);
+            }
             mc.player.noClip = false;
             mc.player.setNoGravity(false);
             mc.player.setVelocity(Vec3d.ZERO);

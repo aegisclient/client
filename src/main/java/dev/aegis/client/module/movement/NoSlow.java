@@ -1,5 +1,6 @@
 package dev.aegis.client.module.movement;
 
+import dev.aegis.client.Aegis;
 import dev.aegis.client.module.Category;
 import dev.aegis.client.module.Module;
 import org.lwjgl.glfw.GLFW;
@@ -12,11 +13,24 @@ public class NoSlow extends Module {
 
     @Override
     public void onTick() {
-        // slowdown prevention handled via mixin
-        // this module just acts as a toggle flag
+        // item use slowdown prevention: when using items, maintain sprint speed
+        if (mc.player == null) return;
+        if (mc.player.isUsingItem()) {
+            // keep sprint active while using items
+            if (mc.player.input.movementForward > 0) {
+                mc.player.setSprinting(true);
+            }
+        }
     }
 
+    /**
+     * Called from mixins to check if NoSlow should prevent movement penalty.
+     */
     public static boolean isActive() {
-        return true;
+        try {
+            Module mod = Aegis.getInstance().getModuleManager().getModule("NoSlow");
+            return mod != null && mod.isEnabled();
+        } catch (Exception ignored) {}
+        return false;
     }
 }

@@ -26,7 +26,7 @@ public class AirPlace extends Module {
 
         // get the block pos the player is looking at in the air
         Vec3d eyePos = mc.player.getEyePos();
-        Vec3d lookVec = mc.player.getRotationVector();
+        Vec3d lookVec = mc.player.getRotationVec(1.0f);
         Vec3d target = eyePos.add(lookVec.multiply(4.0));
 
         BlockPos pos = new BlockPos((int) Math.floor(target.x), (int) Math.floor(target.y), (int) Math.floor(target.z));

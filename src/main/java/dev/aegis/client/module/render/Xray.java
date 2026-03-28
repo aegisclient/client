@@ -1,5 +1,6 @@
 package dev.aegis.client.module.render;
 
+import dev.aegis.client.Aegis;
 import dev.aegis.client.module.Category;
 import dev.aegis.client.module.Module;
 import net.minecraft.block.Block;
@@ -14,7 +15,6 @@ public class Xray extends Module {
     private static final Set<Block> XRAY_BLOCKS = new HashSet<>();
 
     static {
-        // ores
         XRAY_BLOCKS.add(Blocks.DIAMOND_ORE);
         XRAY_BLOCKS.add(Blocks.DEEPSLATE_DIAMOND_ORE);
         XRAY_BLOCKS.add(Blocks.EMERALD_ORE);
@@ -34,23 +34,17 @@ public class Xray extends Module {
         XRAY_BLOCKS.add(Blocks.NETHER_GOLD_ORE);
         XRAY_BLOCKS.add(Blocks.NETHER_QUARTZ_ORE);
         XRAY_BLOCKS.add(Blocks.ANCIENT_DEBRIS);
-
-        // valuable blocks
         XRAY_BLOCKS.add(Blocks.DIAMOND_BLOCK);
         XRAY_BLOCKS.add(Blocks.EMERALD_BLOCK);
         XRAY_BLOCKS.add(Blocks.GOLD_BLOCK);
         XRAY_BLOCKS.add(Blocks.IRON_BLOCK);
         XRAY_BLOCKS.add(Blocks.NETHERITE_BLOCK);
-
-        // storage & spawners
         XRAY_BLOCKS.add(Blocks.CHEST);
         XRAY_BLOCKS.add(Blocks.ENDER_CHEST);
         XRAY_BLOCKS.add(Blocks.TRAPPED_CHEST);
         XRAY_BLOCKS.add(Blocks.BARREL);
         XRAY_BLOCKS.add(Blocks.SHULKER_BOX);
         XRAY_BLOCKS.add(Blocks.SPAWNER);
-
-        // utility
         XRAY_BLOCKS.add(Blocks.TNT);
         XRAY_BLOCKS.add(Blocks.LAVA);
         XRAY_BLOCKS.add(Blocks.WATER);
@@ -79,5 +73,16 @@ public class Xray extends Module {
 
     public static boolean isXrayBlock(Block block) {
         return XRAY_BLOCKS.contains(block);
+    }
+
+    /**
+     * Returns whether Xray is currently active. Called from mixins.
+     */
+    public static boolean isActive() {
+        try {
+            Module mod = Aegis.getInstance().getModuleManager().getModule("Xray");
+            return mod != null && mod.isEnabled();
+        } catch (Exception ignored) {}
+        return false;
     }
 }

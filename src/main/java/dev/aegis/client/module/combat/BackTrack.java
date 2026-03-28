@@ -5,6 +5,7 @@ import dev.aegis.client.event.EventListener;
 import dev.aegis.client.event.events.PacketEvent;
 import dev.aegis.client.module.Category;
 import dev.aegis.client.module.Module;
+import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntityPositionS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityS2CPacket;
@@ -15,9 +16,17 @@ import java.util.Deque;
 
 public class BackTrack extends Module implements EventListener {
 
-    private final Deque<Packet<?>> delayedPackets = new ArrayDeque<>();
+    private static class TimedPacket {
+        final Packet<?> packet;
+        final long timestamp;
+        TimedPacket(Packet<?> packet, long timestamp) {
+            this.packet = packet;
+            this.timestamp = timestamp;
+        }
+    }
+
+    private final Deque<TimedPacket> delayedPackets = new ArrayDeque<>();
     private int maxDelay = 200; // ms
-    private long lastRelease = 0;
 
     public BackTrack() {
         super("BackTrack", "Delays incoming entity position packets to extend hit range", Category.COMBAT, GLFW.GLFW_KEY_UNKNOWN);
@@ -33,28 +42,53 @@ public class BackTrack extends Module implements EventListener {
         if (packet instanceof EntityPositionS2CPacket || packet instanceof EntityS2CPacket) {
             if (mc.player == null) return;
 
-            // delay entity movement packets
-            long now = System.currentTimeMillis();
-            if (now - lastRelease < maxDelay) {
-                delayedPackets.add(packet);
-                packetEvent.cancel();
-            }
+            // queue the packet and cancel it for now
+            delayedPackets.add(new TimedPacket(packet, System.currentTimeMillis()));
+            packetEvent.cancel();
         }
     }
 
     @Override
     public void onTick() {
-        if (mc.player == null) return;
+        if (mc.player == null || mc.getNetworkHandler() == null) return;
 
+        // replay packets that have been held long enough
         long now = System.currentTimeMillis();
-        if (now - lastRelease >= maxDelay) {
-            lastRelease = now;
-            delayedPackets.clear();
+        while (!delayedPackets.isEmpty()) {
+            TimedPacket timed = delayedPackets.peek();
+            if (now - timed.timestamp >= maxDelay) {
+                delayedPackets.poll();
+                // replay by handling the packet through the network handler
+                try {
+                    handlePacket(timed.packet);
+                } catch (Exception ignored) {}
+            } else {
+                break; // remaining packets are newer, not ready yet
+            }
         }
     }
 
     @Override
     protected void onDisable() {
+        // replay all remaining packets immediately
+        if (mc.getNetworkHandler() != null) {
+            while (!delayedPackets.isEmpty()) {
+                TimedPacket timed = delayedPackets.poll();
+                try {
+                    handlePacket(timed.packet);
+                } catch (Exception ignored) {}
+            }
+        }
         delayedPackets.clear();
     }
+
+    @SuppressWarnings("unchecked")
+    private void handlePacket(Packet<?> packet) {
+        if (mc.getNetworkHandler() != null) {
+            ((Packet<ClientPlayPacketListener>) packet).apply(mc.getNetworkHandler());
+        }
+    }
+
+    public void setMaxDelay(int ms) { this.maxDelay = ms; }
+    public int getMaxDelay() { return maxDelay; }
 }

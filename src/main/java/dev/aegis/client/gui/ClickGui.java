@@ -25,22 +25,65 @@ public class ClickGui extends Screen {
     private Category dragCategory = null;
     private final Map<Category, int[]> categoryPositions = new HashMap<>();
 
+    private boolean initialized = false;
+
     public ClickGui() {
         super(Text.literal("Aegis"));
 
-        int x = 20;
+        // Temporary positions; will be recalculated in init() when we know the screen size
         for (Category cat : Category.values()) {
             categoryOpen.put(cat, true);
             categoryScroll.put(cat, 0);
-            categoryPositions.put(cat, new int[]{x, 30});
-            x += panelWidth + 10;
+            categoryPositions.put(cat, new int[]{0, 0});
         }
     }
+
+    @Override
+    protected void init() {
+        super.init();
+        if (!initialized) {
+            layoutPanels();
+            initialized = true;
+        }
+    }
+
+    private void layoutPanels() {
+        int gap = 8;
+        int totalCats = Category.values().length;
+
+        // Calculate how many columns fit on screen
+        int cols = Math.min(totalCats, Math.max(1, (width - 20) / (panelWidth + gap)));
+        int rows = (int) Math.ceil((double) totalCats / cols);
+
+        // Center the grid horizontally
+        int gridWidth = cols * panelWidth + (cols - 1) * gap;
+        int startX = (width - gridWidth) / 2;
+        int startY = 24;
+
+        // Estimate row height: header + ~12 modules visible
+        int rowSpacing = panelHeight + moduleHeight * 12 + 20;
+
+        int idx = 0;
+        for (Category cat : Category.values()) {
+            int col = idx % cols;
+            int row = idx / cols;
+            int x = startX + col * (panelWidth + gap);
+            int y = startY + row * rowSpacing;
+            categoryPositions.put(cat, new int[]{x, y});
+            idx++;
+        }
+    }
+
+    // Tooltip state
+    private String hoveredTooltip = null;
+    private int tooltipX, tooltipY;
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         // dim background slightly
         renderBackground(context, mouseX, mouseY, delta);
+
+        hoveredTooltip = null;
 
         for (Category category : Category.values()) {
             renderPanel(context, category, mouseX, mouseY);
@@ -52,6 +95,19 @@ public class ClickGui extends Screen {
                 "\u00a76\u00a7lAEGIS \u00a77v" + Aegis.VERSION,
                 width / 2, 8, 0xFFFFFF
         );
+
+        // draw tooltip last (on top of everything)
+        if (hoveredTooltip != null) {
+            int tw = textRenderer.getWidth(hoveredTooltip);
+            int tx = tooltipX + 12;
+            int ty = tooltipY - 4;
+            // Keep on screen
+            if (tx + tw + 6 > width) tx = tooltipX - tw - 12;
+            if (ty < 2) ty = 2;
+            context.fill(tx - 3, ty - 2, tx + tw + 3, ty + 11, 0xEE101020);
+            context.fill(tx - 3, ty - 2, tx + tw + 3, ty - 1, 0xFF3b82f6);
+            context.drawTextWithShadow(textRenderer, hoveredTooltip, tx, ty, 0xCCCCCC);
+        }
     }
 
     private void renderPanel(DrawContext context, Category category, int mouseX, int mouseY) {
@@ -85,6 +141,13 @@ public class ClickGui extends Screen {
             String modName = mod.getName();
             int textColor = mod.isEnabled() ? 0x2ecc71 : 0xbdc3c7;
             context.drawTextWithShadow(textRenderer, modName, x + 4, yOffset + 4, textColor);
+
+            // Set tooltip on hover
+            if (hovered && mod.getDescription() != null && !mod.getDescription().isEmpty()) {
+                hoveredTooltip = mod.getDescription();
+                tooltipX = mouseX;
+                tooltipY = mouseY;
+            }
 
             // keybind display
             if (mod.getKeyBind() != 0) {

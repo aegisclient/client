@@ -2,7 +2,9 @@ package dev.aegis.client.module.render;
 
 import dev.aegis.client.module.Category;
 import dev.aegis.client.module.Module;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.util.math.Box;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
@@ -18,9 +20,10 @@ public class DamageParticles extends Module {
 
     @Override
     public void onTick() {
-        if (mc.world == null) return;
+        if (mc.world == null || mc.player == null) return;
 
-        mc.world.getEntities().forEach(entity -> {
+        Box searchBox = mc.player.getBoundingBox().expand(64);
+        for (Entity entity : mc.world.getOtherEntities(mc.player, searchBox)) {
             if (entity instanceof LivingEntity living) {
                 int id = living.getId();
                 float currentHealth = living.getHealth();
@@ -28,13 +31,12 @@ public class DamageParticles extends Module {
 
                 if (previous != null && currentHealth < previous) {
                     float damage = previous - currentHealth;
-                    // spawn particle via chat or custom render
                     // damage numbers rendered in HUD overlay
                 }
 
                 lastHealth.put(id, currentHealth);
             }
-        });
+        }
     }
 
     @Override

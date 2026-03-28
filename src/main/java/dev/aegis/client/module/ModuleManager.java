@@ -9,6 +9,7 @@ import dev.aegis.client.module.world.*;
 import dev.aegis.client.module.exploit.*;
 import dev.aegis.client.module.fun.*;
 import dev.aegis.client.module.misc.*;
+import dev.aegis.client.module.premium.*;
 import net.minecraft.client.MinecraftClient;
 import org.lwjgl.glfw.GLFW;
 
@@ -170,6 +171,20 @@ public class ModuleManager {
         register(new MiddleClickAction());
         register(new Teams());
         register(new FlagCheck());
+
+        // premium (8) - only register if premium key is detected
+        if (Aegis.getInstance().getPremiumManager().isPremium()) {
+            register(new HypixelDisabler());
+            register(new HypixelSpeed());
+            register(new HypixelFlight());
+            register(new HypixelScaffold());
+            register(new HypixelKillAura());
+            register(new HypixelBowAimbot());
+            register(new ServerBypasses());
+            register(new AegisCape());
+            register(new PremiumInfo());
+            Aegis.LOGGER.info("Premium modules loaded!");
+        }
 
         Aegis.LOGGER.info("Registered {} modules", modules.size());
     }
