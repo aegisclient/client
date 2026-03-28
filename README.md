@@ -1,12 +1,9 @@
 <div align="center">
 
-<img src="assets/aegis_logo.svg" alt="Aegis" width="460" />
 
 <br>
 
 ### A free and open-source Minecraft utility mod for Fabric
-
-134+ modules &middot; Anti-cheat bypass &middot; Rust launcher &middot; MC 1.20.4
 
 <br>
 
@@ -14,7 +11,7 @@
 [![Modules](https://img.shields.io/badge/modules-134+-FFD700?style=flat-square)](https://github.com/ArhanCodes/aegis#modules-134)
 [![License](https://img.shields.io/github/license/ArhanCodes/aegis?style=flat-square&color=FFD700)](LICENSE)
 
-[Website](https://arhancodes.github.io/aegis) · [Download](https://github.com/ArhanCodes/aegis/releases) · [Issues](https://github.com/ArhanCodes/aegis/issues) · [Source](https://github.com/ArhanCodes/aegis)
+[Website](https://arhancodes.github.io/aegis) · [Download](https://github.com/ArhanCodes/aegis/releases) · [Issues](https://github.com/ArhanCodes/aegis/issues)
 
 </div>
 
@@ -22,13 +19,13 @@
 
 ## What is Aegis?
 
-Aegis is a **free, open-source** Fabric injection client for Minecraft 1.20.4. It features **134+ modules** across 8 categories, advanced **anti-cheat bypass** with NCP-safe packet timing, and a native **Rust launcher** built with Tauri.
+Aegis is a free Fabric injection client for Minecraft 1.20.4. It features 134+ modules across 8 categories, advanced anti-cheat bypass with NCP-safe packet timing, and a native launcher.
 
-> **Disclaimer:** This project is for educational purposes. Use responsibly and at your own risk.
+> This project is for educational purposes. Use responsibly and at your own risk
 
 ## Issues
 
-If you notice any bugs or missing features, please let us know by opening an [issue](https://github.com/ArhanCodes/aegis/issues).
+If you notice any bugs or missing features, please let us know by opening an [issue](https://github.com/ArhanCodes/aegis/issues)
 
 ## Modules (134)
 
@@ -237,21 +234,6 @@ Aegis includes a chat command system (default prefix: `.`).
 | `.hclip <distance>` | Horizontal clip through blocks |
 | `.prefix <new>` | Change command prefix |
 
-## License
-
-This project is subject to the [GNU General Public License v3.0](LICENSE). This does only apply for source code located directly in this clean repository. During the development and compilation process, additional source code may be used to which we have obtained no rights. Such code is not covered by the GPL license.
-
-*Actions that you are allowed to do:*
-
-- **Use** the source code for personal and commercial purposes
-- **Share** and distribute the source code
-- **Modify** the source code and create derivative works
-
-*If you decide to use ANY code from the source:*
-
-- **Disclose** the source code of your modified work under the GPL license
-- **State** any changes you have made to the original code
-- **License** your modified work under the **GPL-3.0** license
 
 ## Setting up a Workspace
 
@@ -267,8 +249,8 @@ Aegis uses Gradle and requires JDK 17+ to build.
 
 ### Mixins
 
-Aegis uses [SpongePowered Mixin](https://github.com/SpongePowered/Mixin) for bytecode injection at runtime. See the [Mixin Wiki](https://github.com/SpongePowered/Mixin/wiki) for documentation.
+Aegis uses [SpongePowered Mixin](https://github.com/SpongePowered/Mixin) for bytecode injection at runtime. See the [Mixin Wiki](https://github.com/SpongePowered/Mixin/wiki) for documentation
 
 ## Contributing
 
-We appreciate contributions. If you want to improve Aegis, feel free to open a pull request.
+We appreciate contributions. If you want to improve Aegis, feel free to open a pull request
